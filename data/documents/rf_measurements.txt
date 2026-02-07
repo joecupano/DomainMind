@@ -1,0 +1,118 @@
+RF Test and Measurement Techniques
+
+Vector Network Analyzer (VNA)
+The VNA is the most versatile RF test instrument, measuring both magnitude and phase of RF signals.
+
+S-Parameter Measurements:
+- Calibration is critical: SOLT (Short-Open-Load-Thru) or TRL (Thru-Reflect-Line)
+- Port extensions compensate for test cable lengths
+- Time domain capability for fault location
+- Dynamic range typically 100-140 dB
+
+Applications:
+- Component characterization (filters, amplifiers, antennas)
+- Cable and connector testing
+- Impedance matching verification
+- Material property measurements
+
+Spectrum Analyzer
+Measures signal amplitude versus frequency, essential for spectral purity analysis.
+
+Key Specifications:
+- Frequency range: Audio to millimeter wave
+- Resolution bandwidth (RBW): Determines frequency selectivity
+- Sensitivity: Displayed Average Noise Level (DANL)
+- Dynamic range: Ability to measure weak signals in presence of strong signals
+
+Measurement Types:
+- Spurious emissions testing
+- Harmonic distortion analysis
+- Phase noise measurements
+- Occupied bandwidth measurements
+- Adjacent channel power
+
+Power Meters
+Accurate measurement of RF power levels.
+
+Sensor Types:
+- Thermoelectric: Wide frequency range, good accuracy
+- Diode: Fast response, lower cost
+- Thermistor: High accuracy, slower response
+
+Calibration:
+- Power reference standards maintained at national laboratories
+- Transfer standards used for field calibration
+- Uncertainty budgets account for all error sources
+
+Signal Generators
+Provide calibrated RF signals for testing.
+
+Types:
+- Analog: Continuous wave (CW) and swept frequency
+- Vector: Complex modulation capability
+- Arbitrary waveform: Custom signal generation
+
+Key Specifications:
+- Frequency range and resolution
+- Power range and accuracy
+- Phase noise performance
+- Modulation capabilities
+- Switching speed
+
+Antenna Measurements
+Antenna Range Types:
+- Far-field: Outdoor ranges, anechoic chambers
+- Near-field: Compact ranges using reflectors
+- Near-field scanning: Planar, cylindrical, spherical
+
+Measured Parameters:
+- Radiation pattern: E-plane and H-plane cuts
+- Gain: Absolute or relative to standard antenna
+- Polarization: Cross-polarization discrimination
+- Input impedance: VSWR over frequency band
+
+EMI/EMC Testing
+Electromagnetic Interference and Compatibility testing ensures devices work in their electromagnetic environment.
+
+Emissions Testing:
+- Conducted emissions: 150 kHz to 30 MHz
+- Radiated emissions: 30 MHz to 1 GHz (or higher)
+- CISPR, FCC, and military standards
+
+Immunity Testing:
+- Electrostatic discharge (ESD)
+- RF immunity: Conducted and radiated
+- Electrical fast transients
+- Surge immunity
+
+Test Setups:
+- Shielded enclosures for conducted tests
+- Anechoic chambers for radiated tests
+- Ground planes and measurement distances specified
+- Calibrated test equipment required
+
+Phase Noise Measurements
+Phase noise is random fluctuations in signal phase, critical for oscillator characterization.
+
+Measurement Methods:
+- Direct spectrum analyzer method: Limited by analyzer noise floor
+- Phase detector method: Higher sensitivity, narrow frequency range
+- Cross-correlation: Reduces measurement noise floor
+
+Specification:
+- Single sideband phase noise: L(f) in dBc/Hz at offset frequency
+- Integrated phase noise over specified bandwidth
+- Allan variance for frequency stability
+
+Noise Figure Measurements
+Noise figure quantifies noise added by RF components and systems.
+
+Measurement Methods:
+- Y-factor method: Hot and cold noise sources
+- Cold source method: Single noise source
+- Noise figure analyzer: Automated measurements
+
+Corrections:
+- Loss before device under test increases measured NF
+- Gain compression affects noise figure
+- Temperature variations affect noise source output

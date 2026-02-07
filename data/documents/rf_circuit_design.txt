@@ -1,0 +1,93 @@
+RF Circuit Design Principles
+
+Introduction to RF Circuits
+RF circuits operate at frequencies where component parasitic effects become significant. Traditional lumped element analysis breaks down at higher frequencies, requiring distributed element analysis and electromagnetic field theory.
+
+Transmission Lines
+Characteristic Impedance (Z0):
+- Z0 = sqrt(L/C) where L is inductance per unit length and C is capacitance per unit length
+- Common values: 50 ohms (coaxial), 75 ohms (video), 100 ohms (twisted pair)
+- Microstrip: Z0 depends on substrate thickness, dielectric constant, and trace width
+
+Reflection Coefficient (Γ):
+- Γ = (ZL - Z0) / (ZL + Z0)
+- Determines amount of signal reflected back from load
+- VSWR = (1 + |Γ|) / (1 - |Γ|)
+
+Smith Chart Applications:
+- Graphical tool for impedance matching
+- Plots normalized impedance and admittance
+- Useful for stub matching and quarter-wave transformers
+
+RF Amplifier Design
+S-Parameters:
+- S11: Input reflection coefficient
+- S12: Reverse transmission coefficient
+- S21: Forward transmission coefficient (gain)
+- S22: Output reflection coefficient
+
+Stability Analysis:
+- Unconditional stability: K > 1 and |Δ| < 1
+- Conditional stability requires careful source/load impedance selection
+- Rollett's stability factor K = (1 - |S11|² - |S22|² + |Δ|²) / (2|S12||S21|)
+
+Matching Networks:
+L-networks: Single inductor and capacitor, limited Q
+Pi-networks: Better bandwidth control
+T-networks: Alternative configuration
+Stub matching: Using transmission line sections
+
+RF Filter Design
+Filter Types:
+- Low-pass: Passes frequencies below cutoff
+- High-pass: Passes frequencies above cutoff
+- Band-pass: Passes frequencies within specified band
+- Band-stop: Rejects frequencies within specified band
+
+Implementation Methods:
+- Lumped elements (L, C): Good for lower frequencies
+- Distributed elements: Microstrip, stripline for higher frequencies
+- Surface Acoustic Wave (SAW): High Q, compact
+- Ceramic filters: Good temperature stability
+
+Filter Specifications:
+- Insertion loss in passband
+- Return loss (reflection)
+- Rejection in stopband
+- Group delay variation
+- Power handling capability
+
+Mixer Design
+Mixer Types:
+- Passive: Diode mixers, no gain, require LO power
+- Active: FET mixers, can provide gain, lower LO power
+- Balanced: Suppress LO leakage
+- Double-balanced: Suppress both LO and RF leakage
+
+Key Parameters:
+- Conversion loss/gain
+- Isolation (LO-RF, LO-IF, RF-IF)
+- Intermodulation distortion
+- Noise figure
+- Dynamic range
+
+Oscillator Design
+Feedback Oscillators:
+- Barkhausen criterion: Loop gain = 1, phase shift = 0°
+- Colpitts: LC tank with capacitive feedback
+- Hartley: LC tank with inductive feedback
+- Crystal oscillators: High stability, low phase noise
+
+Phase-Locked Loops (PLLs):
+- Voltage-controlled oscillator (VCO)
+- Phase detector
+- Loop filter
+- Reference frequency
+- Applications: Frequency synthesis, clock recovery
+
+RF Power Amplifier Classes:
+Class A: Linear, low efficiency (~50%)
+Class B: Push-pull, higher efficiency (~78%)
+Class C: High efficiency (~90%), nonlinear
+Class E: Switch-mode, very high efficiency
+Class F: Harmonic tuning for improved efficiency

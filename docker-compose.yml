@@ -1,0 +1,380 @@
+version: '3.8'
+
+services:
+  # Main RF-Expert-AI Application
+  rf-expert-ai:
+    build: .
+    container_name: rf-expert-ai-app
+    restart: unless-stopped
+    ports:
+      - "8501:8501"  # Direct access to Streamlit
+    volumes:
+      - ./data:/app/data:ro  # Read-only for security
+      - ./logs:/app/logs
+      - ./backups:/app/backups
+      - audit_logs:/app/audit_logs
+    environment:
+      - LLM_BACKEND=${LLM_BACKEND:-ollama}  # ollama or localai
+      - OLLAMA_HOST=http://ollama:11434
+      - LOCALAI_HOST=http://localai:8080
+      - PYTHONPATH=/app
+      - ENABLE_AUDIT_LOGGING=true
+      - AUDIT_LOG_PATH=/app/audit_logs
+    depends_on:
+      - ollama
+      - audit-db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - frontend-network
+      - backend-network
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+  # Ollama LLM Server (default)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: rf-expert-ai-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_ORIGINS=*
+      - OLLAMA_HOST=0.0.0.0:11434
+    networks:
+      - backend-network
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=2G
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 8G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+    # Uncomment for GPU support
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    profiles:
+      - ollama
+
+  # LocalAI Server (alternative to Ollama)
+  localai:
+    image: quay.io/go-skynet/local-ai:latest
+    container_name: rf-expert-ai-localai
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - localai_models:/models
+      - localai_data:/tmp/localai
+    environment:
+      - THREADS=4
+      - CONTEXT_SIZE=512
+      - MODELS_PATH=/models
+    networks:
+      - backend-network
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 8G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+    # Uncomment for GPU support
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    profiles:
+      - localai
+
+  # Nginx Reverse Proxy (Optional)
+  nginx:
+    image: nginx:alpine
+    container_name: rf-expert-ai-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - rf-expert-ai
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - frontend-network
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+      - CHOWN
+      - SETGID
+      - SETUID
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx:noexec,nosuid,size=100m
+      - /var/run:noexec,nosuid,size=10m
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+  # Redis Cache (Optional - for advanced caching)
+  redis:
+    image: redis:7-alpine
+    container_name: rf-expert-ai-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"  # Bind to localhost only
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - backend-network
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=50m
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 768M
+        reservations:
+          cpus: '0.1'
+          memory: 256M
+
+  # PostgreSQL Database (Optional - for persistent metadata)
+  postgres:
+    image: postgres:15-alpine
+    container_name: rf-expert-ai-postgres
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5432:5432"  # Bind to localhost only
+    environment:
+      - POSTGRES_DB=rf_expert_ai
+      - POSTGRES_USER=rf_expert_ai_user
+      - POSTGRES_PASSWORD=rf_expert_ai_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rf_expert_ai_user -d rf_expert_ai"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - backend-network
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+
+  # Audit Database (for chain of custody)
+  audit-db:
+    image: postgres:15-alpine
+    container_name: rf-expert-ai-audit-db
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5433:5432"  # Different port for audit DB
+    environment:
+      - POSTGRES_DB=audit_db
+      - POSTGRES_USER=audit_user
+      - POSTGRES_PASSWORD=${AUDIT_DB_PASSWORD:-changeme_secure_password}
+    volumes:
+      - audit_db_data:/var/lib/postgresql/data
+      - ./postgres/audit_init.sql:/docker-entrypoint-initdb.d/audit_init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U audit_user -d audit_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - backend-network
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # Monitoring with Prometheus (Optional)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: rf-expert-ai-prometheus
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9090:9090"  # Bind to localhost only
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+    networks:
+      - backend-network
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "65534:65534"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
+
+  # Grafana Dashboard (Optional)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: rf-expert-ai-grafana
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"  # Bind to localhost only
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SECURITY_DISABLE_GRAVATAR=true
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    depends_on:
+      - prometheus
+    networks:
+      - backend-network
+      - frontend-network
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "472:472"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
+# Named volumes for data persistence
+volumes:
+  ollama_data:
+    driver: local
+  localai_models:
+    driver: local
+  localai_data:
+    driver: local
+  nginx_logs:
+    driver: local
+  redis_data:
+    driver: local
+  postgres_data:
+    driver: local
+  audit_db_data:
+    driver: local
+  audit_logs:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+# Segmented networks for isolation
+networks:
+  # Frontend network - only nginx and grafana
+  frontend-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+  # Backend network - internal services only
+  backend-network:
+    driver: bridge
+    internal: true  # No external access
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24

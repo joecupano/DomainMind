@@ -1,0 +1,50 @@
+# RF Expert AI Platform - Python Dependencies
+# Core dependencies for on-premise deployment in regulated environments
+
+# Web Framework
+streamlit>=1.28.0
+
+# Vector Database and Embeddings
+chromadb>=0.4.15
+sentence-transformers>=2.2.2
+
+# Document Processing
+PyPDF2>=3.0.1
+pdfplumber>=0.10.3
+python-docx>=1.1.0
+olefile>=0.46
+
+# Web Scraping
+requests>=2.31.0
+trafilatura>=1.6.2
+
+# Machine Learning
+scikit-learn>=1.3.2
+numpy>=1.24.3
+scipy>=1.11.4
+
+# LLM Integration
+# Note: LLM backends (Ollama/LocalAI) run in separate containers
+
+# Audit and Compliance
+psycopg2-binary>=2.9.9  # PostgreSQL adapter for audit logging
+
+# Deep Learning (Optional - for fine-tuning)
+torch>=2.1.0
+transformers>=4.35.0
+datasets>=2.14.0
+accelerate>=0.24.0
+peft>=0.6.0
+bitsandbytes>=0.41.0
+
+# Security and Cryptography
+cryptography>=41.0.7
+
+# Configuration Management
+python-dotenv>=1.0.0
+
+# Monitoring and Metrics (optional)
+prometheus-client>=0.19.0
+
+# Logging
+structlog>=23.2.0  # Structured logging for better audit trails
